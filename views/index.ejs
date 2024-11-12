@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gestión de Inventario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #007bff;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #fff;
+        }
+        .add-btn {
+            background-color: #28a745;
+        }
+        .download-btn {
+            background-color: #007bff;
+        }
+        .edit-btn {
+            background-color: #ffc107;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        td {
+            background-color: #f9f9f9;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        #editModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        #editModal .modal-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            position: relative;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+        .close-btn {
+            background-color: #6c757d;
+        }
+        .xml-tree {
+            font-family: monospace;
+            margin: 20px;
+            padding: 20px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestión de Inventario</h1>
+        <button onclick="downloadXML()" class="download-btn">Descargar XML</button>
+
+        <!-- Formulario de creación -->
+        <h2>Agregar Producto</h2>
+        <form action="/productos" method="POST">
+            <div class="form-group">
+                <label>Nombre:</label>
+                <input type="text" name="nombre" required>
+            </div>
+            <div class="form-group">
+                <label>Precio:</label>
+                <input type="number" name="precio" required>
+            </div>
+            <div class="form-group">
+                <label>Cantidad:</label>
+                <input type="number" name="cantidad" required>
+            </div>
+            <div class="form-group">
+                <label>Categoría:</label>
+                <input type="text" name="categoria" required>
+            </div>
+            <button type="submit" class="add-btn">Agregar</button>
+        </form>
+
+        <!-- Lista de productos -->
+        <h2>Productos</h2>
+        <div>
+            <h3></h3>
+            <% categorias.forEach(function(cat) { %>
+                <a href="/filtrar/<%= cat %>"><%= cat %></a>
+            <% }); %>
+        </div>
+
+        <table>
+            <tr>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Cantidad</th>
+                <th>Categoría</th>
+                <th>Acciones</th>
+            </tr>
+            <% products.forEach(function(product) { %>
+                <tr>
+                    <td><%= product.nombre %></td>
+                    <td><%= product.precio %></td>
+                    <td><%= product.cantidad %></td>
+                    <td><%= product.categoria %></td>
+                    <td>
+                        <button onclick="editProduct('<%= product._id %>')" class="edit-btn">Editar</button>
+                        <form action="/productos/delete/<%= product._id %>" method="POST" style="display: inline;">
+                            <button type="submit" class="delete-btn">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+            <% }); %>
+        </table>
+
+        <!-- Visualización XML -->
+        <h2>Árbol XML</h2>
+        <pre class="xml-tree"><%= xml %></pre>
+
+        <!-- Totales -->
+        <h2>Resumen</h2>
+        <p>Valor total del inventario: $<%= totalValor %></p>
+        <p>Porcentaje por categoría:</p>
+        <% 
+            const totalProductos = products.length;
+            const porCategoria = {};
+            products.forEach(p => {
+                porCategoria[p.categoria] = (porCategoria[p.categoria] || 0) + 1;
+            });
+            for (let cat in porCategoria) {
+                const porcentaje = (porCategoria[cat] / totalProductos * 100).toFixed(2);
+        %>
+            <p><%= cat %>: <%= porcentaje %>%</p>
+        <% } %>
+    </div>
+
+    <!-- Modal de edición -->
+    <div id="editModal">
+        <div class="modal-content">
+            <h2>Editar Producto</h2>
+            <form id="editForm" method="POST">
+                <div class="form-group">
+                    <label>Nombre:</label>
+                    <input type="text" name="nombre" id="editNombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Precio:</label>
+                    <input type="number" name="precio" id="editPrecio" required>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad:</label>
+                    <input type="number" name="cantidad" id="editCantidad" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoría:</label>
+                    <input type="text" name="categoria" id="editCategoria" required>
+                </div>
+                <button type="submit" class="edit-btn">Guardar Cambios</button>
+                <button type="button" onclick="closeModal()" class="close-btn">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function editProduct(id) {
+            fetch(`/productos/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('editNombre').value = data.nombre;
+                    document.getElementById('editPrecio').value = data.precio;
+                    document.getElementById('editCantidad').value = data.cantidad;
+                    document.getElementById('editCategoria').value = data.categoria;
+                    document.getElementById('editForm').action = `/productos/${id}`;
+                    document.getElementById('editModal').style.display = 'flex';
+                })
+                .catch(error => console.error('Error al cargar los datos del producto:', error));
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function downloadXML() {
+            const xmlData = `<%= xml.replace(/\n/g, '\\n').replace(/"/g, '\\"') %>`;
+            const blob = new Blob([xmlData], { type: 'application/xml' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'inventario.xml';
+            link.click();
+        }
+    </script>
+</body>
+</html>

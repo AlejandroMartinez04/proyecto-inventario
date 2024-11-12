@@ -1,0 +1,29 @@
+<!-- views/edit.ejs -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Editar Producto</title>
+</head>
+<body>
+    <h1>Editar Producto</h1>
+    <form action="/productos/<%= product._id %>" method="POST">
+        <div class="form-group">
+            <label>Nombre:</label>
+            <input type="text" name="nombre" value="<%= product.nombre %>" required>
+        </div>
+        <div class="form-group">
+            <label>Precio:</label>
+            <input type="number" name="precio" value="<%= product.precio %>" required>
+        </div>
+        <div class="form-group">
+            <label>Cantidad:</label>
+            <input type="number" name="cantidad" value="<%= product.cantidad %>" required>
+        </div>
+        <div class="form-group">
+            <label>Categoría:</label>
+            <input type="text" name="categoria" value="<%= product.categoria %>" required>
+        </div>
+        <button type="submit">Guardar Cambios</button>
+    </form>
+</body>
+</html>
