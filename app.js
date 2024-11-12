@@ -12,26 +12,10 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Conectado a MongoDB'))
+    .then(() => {
+        console.log('Conectado a MongoDB');
+    })
     .catch(error => console.error('Error conectando a MongoDB:', error));
-
-app.get('/productos/:id', async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.id).lean();
-        res.json(product);
-    } catch (error) {
-        res.status(500).send('Algo salió mal. Por favor intenta de nuevo más tarde.');
-    }
-});
-
-app.post('/productos/:id', async (req, res) => {
-    try {
-        await Product.findByIdAndUpdate(req.params.id, req.body);
-        res.redirect('/');
-    } catch (error) {
-        res.status(500).send('Algo salió mal. Por favor intenta de nuevo más tarde.');
-    }
-});
 
 app.get('/', async (req, res) => {
     try {
@@ -51,6 +35,27 @@ app.get('/', async (req, res) => {
         const categorias = [...new Set(products.map(p => p.categoria))];
         res.render('index', { products, xml, totalValor, categorias });
     } catch (error) {
+        console.error('Error en la ruta /:', error); // Log del error
+        res.status(500).send('Algo salió mal. Por favor intenta de nuevo más tarde.');
+    }
+});
+
+app.get('/productos/:id', async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id).lean();
+        res.json(product);
+    } catch (error) {
+        console.error('Error en la ruta /productos/:id:', error); // Log del error
+        res.status(500).send('Algo salió mal. Por favor intenta de nuevo más tarde.');
+    }
+});
+
+app.post('/productos/:id', async (req, res) => {
+    try {
+        await Product.findByIdAndUpdate(req.params.id, req.body);
+        res.redirect('/');
+    } catch (error) {
+        console.error('Error en la ruta /productos/:id (POST):', error); // Log del error
         res.status(500).send('Algo salió mal. Por favor intenta de nuevo más tarde.');
     }
 });
@@ -62,6 +67,7 @@ app.post('/productos', async (req, res) => {
         await product.save();
         res.redirect('/');
     } catch (error) {
+        console.error('Error en la ruta /productos (POST):', error); // Log del error
         res.status(500).send('Algo salió mal. Por favor intenta de nuevo más tarde.');
     }
 });
@@ -71,12 +77,13 @@ app.post('/productos/delete/:id', async (req, res) => {
         await Product.findByIdAndDelete(req.params.id);
         res.redirect('/');
     } catch (error) {
+        console.error('Error en la ruta /productos/delete/:id:', error); // Log del error
         res.status(500).send('Algo salió mal. Por favor intenta de nuevo más tarde.');
     }
 });
 
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('Error global:', err.stack);
     res.status(500).send('Algo salió mal. Por favor intenta de nuevo más tarde.');
 });
 
